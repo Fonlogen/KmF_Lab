@@ -1,0 +1,440 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@100;400;700&family=Quicksand:wght@300;400;700&display=swap');
+
+.attack_page {
+  display: flex;
+  flex-direction: column;   
+  width: 100%;
+  height: 100%;
+  gap: 5px;
+}
+
+.attack_page > h2 {
+  text-align: center;
+  border-bottom: 1px solid rgb(39, 39, 39);
+  padding-bottom: 10px;
+}
+
+.attack_page > .attack-container {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  /* font-size: 50px; */
+}
+
+.no-spy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  font-size: 30px;
+  font-weight: 700;
+  color: rgb(255, 255, 255);
+}
+
+.buy-spy-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 30px;
+  width: 100%;
+  height: 50px;
+  background-color: rgb(219, 49, 49);
+  border-radius: 5px;
+  font-size: 20px;
+  font-weight: 700;
+  color: rgb(255, 255, 255); 
+  border: none;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.buy-spy-btn:hover {
+  background-color: rgb(255, 0, 0);
+}
+
+.buy-spy-btn:active {
+  background-color: rgb(150, 0, 0);
+}
+
+.spy-info {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spy-info-title {
+  font-size: 30px;
+  font-weight: 700;
+  color: rgb(255, 255, 255);
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100px;
+}
+
+.spy-labs-list {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  /* height: 100%; */
+  flex: 1;
+  padding: 1rem 2rem;
+}
+
+.spied-lab {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 5px;
+  padding: 20px 30px;
+  background-color: rgba(180, 102, 0, 0.151);
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  height: 100%;
+  width: 100%;
+}
+
+.spied-lab > .spied-lab-name {
+  font-size: 25px;
+  font-weight: 700;
+  color: rgb(255, 255, 255);
+  width: 100%;
+  text-align: center;
+}
+
+.spied-lab-owner {
+  width: 100%;
+  text-align: center;
+}
+
+.spied-lab-employees-title, .spied-lab-resources-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: rgb(255, 187, 0);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+}
+
+.spied-lab-employees-list {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+}
+
+.lab-employees {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.spied-lab-owner {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.spied-lab-owner-title {
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  color: rgb(255, 187, 0);
+  width: 100%;
+  text-align: left;
+  /* width: 100%; */
+}
+
+.spied-lab-owner-value {
+  font-size: 20px;
+  font-weight: 100;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  color: rgb(255, 255, 255);
+  width: 100%;
+  text-align: left;
+  /* width: 100%; */
+}
+
+.spied-lab-employee {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.spied-lab-resources-list {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.spied-lab-resources {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.spied-lab-resource {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 5px 5px;
+  gap: 5px;
+  border-radius: 5px;
+}
+
+.spied-lab-resource-title {
+  font-size: 18px;
+  font-weight: 400;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /* width: 100%; */
+}
+
+.spied-lab-resource-value {
+  font-size: 18px;
+  font-weight: 100;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  /* width: 100%; */
+}
+
+.spied-lab-resource:nth-child(odd) {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.spied-lab-actions {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  justify-self: flex-end;
+  align-self: flex-end;
+  margin-top: auto;
+  width: 100%;
+  gap: 10px;
+}
+
+.spied-lab-action-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 30px;
+  width: fit-content;
+
+  height: 50px;
+  background-color: rgb(219, 49, 49);
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: 700;
+  color: rgb(255, 255, 255);
+  border: none;
+  cursor: pointer;
+  transition: 0.3s;
+
+}
+
+.spied-lab-actions .attack {
+  background-color: rgb(228, 91, 0);
+}
+
+.spied-lab-actions .attack:hover {
+  background-color: rgb(255, 100, 0);
+}
+
+.spied-lab-actions .attack:active {
+  background-color: rgb(255, 50, 0);
+}
+
+.spied-lab-actions .info {
+  background-color: rgb(0, 162, 255);
+}
+
+.spied-lab-actions .info:hover {
+  background-color: rgb(0, 100, 255);
+}
+
+.spied-lab-actions .info:active {
+  background-color: rgb(0, 50, 255);
+}
+
+.spy-time {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  font-size: 30px;
+  font-weight: 700;
+  color: rgb(255, 255, 255);
+}
+
+.spy-time-title {
+  font-size: 30px;
+  font-weight: 700;
+  color: rgb(255, 187, 0);
+}
+
+.spy-time-value {
+  font-size: 30px;
+  font-weight: 100;
+  color: rgb(255, 255, 255);
+}
+
+.attack-time {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  font-size: 30px;
+  font-weight: 700;
+  color: rgb(255, 255, 255);
+}
+
+.attack-time-title {
+  font-size: 30px;
+  font-weight: 700;
+  color: rgb(255, 187, 0);
+}
+
+.attack-time-value {
+  font-size: 30px;
+  font-weight: 100;
+  color: rgb(255, 255, 255);
+}
+
+.attack-result {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  font-size: 30px;
+  font-weight: 700;
+  color: rgb(255, 255, 255);
+  width: 100%;
+  padding: 40px 80px;
+}
+
+.attack-container {
+  width: 100%;
+}
+
+.attack-results {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 30px;
+  font-size: 30px;
+  font-weight: 700;
+  color: rgb(255, 255, 255);
+  width: 100%;
+}
+
+.attack-results-list {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 5px;
+  font-size: 20px;
+  font-weight: 700;
+  color: rgb(255, 255, 255);
+  width: 100%;
+}
+
+.attack-result-item {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 5px;
+  font-size: 20px;
+  font-weight: 700;
+  color: rgb(255, 255, 255);
+  width: 100%;
+  padding: 5px 10px;
+  border-radius: 5px;
+}
+
+.attack-result-item:nth-child(odd) {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.attack-result-item-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: rgb(255, 187, 0);
+}
+
+.attack-result-item-value {
+  font-size: 20px;
+  font-weight: 100;
+  color: rgb(255, 255, 255);
+}
+
+.attack-result-btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 30px;
+  width: fit-content;
+
+  height: 50px;
+  background-color: rgb(219, 131, 49);
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: 700;
+  color: rgb(255, 255, 255);
+  border: none;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.attack-result-btn:hover {
+  background-color: rgb(255, 100, 0);
+}
+
+.attack-result-btn:active {
+  background-color: rgb(255, 50, 0);
+}
+
+.attack-result-btn.disabled {
+  background-color: rgb(100, 100, 100);
+  cursor: not-allowed;
+}

@@ -1,0 +1,257 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@100;400;700&family=Quicksand:wght@300;400;700&display=swap');
+
+.crafting_page {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  /* justify-content: center; */
+  align-items: center;
+  overflow: hidden;
+}
+
+.crafting_page > .title {
+  text-align: center;
+  border-bottom: 1px solid rgba(87, 52, 0, 0.363);
+  padding-bottom: 10px;
+  width: 100%;
+  height: 50px;
+}
+
+.crafting_list {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  flex: 1;
+  width: 100%;
+  gap: 10px;
+  padding: 10px 5px;
+  justify-content: center;
+  /* max-height: 454px; */
+  /* height: 500px;
+  min-height: 500px; */
+  overflow-y: auto;
+  /* box-sizing: border-box; */
+  align-content: flex-start;
+}
+
+.crafting_data {
+  display: flex;
+  flex-direction: row;
+  /* flex-wrap: wrap; */
+  gap: 10px;
+  /* justify-content: center; */
+  /* align-items: center; */
+}
+
+.crafting_data > img {
+  width: 100px;
+  height: 100px;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
+.crafting_data > .crafting_item_info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  font-size: 20px;
+  justify-content: center;
+  gap: 5px;
+  /* justify-content: center; */
+  /* align-items: center; */
+}
+
+.crafting_item_info > h3 {
+  font-size: 20px;
+}
+
+.crafting_requirements {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+}
+
+.crafting_requirement {
+  width: fit-content;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+}
+
+.crafting_requirement > img {
+  width: 24px;
+  height: 24px;
+}
+
+.crafting_button {
+  width: fit-content;
+  height: fit-content;
+  padding: 5px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 5px;
+  border: none;
+  background-color: rgb(0, 94, 235);
+  color: white;
+  cursor: pointer;
+}
+
+.crafting_buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.crafting_item_qty {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-size: 40px;
+  font-family: 'Quicksand', sans-serif;
+  padding: 0 20px;
+}
+
+.crafting_tables {
+  height: 210px;
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: nowrap;
+  /* background-color: azure; */
+  width: 100%;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: flex-start;
+  overflow: hidden;
+  overflow-x: visible;
+  gap: 10px;
+  /* max-height: 200px; */
+  /* width: 100%;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  flex: 1;
+  justify-content: flex-start;
+  gap: 5px;
+  border-top: 1px solid #272727;
+  margin-bottom: 0;
+  /* max-width: 100%; */
+  /* box-sizing: border-box;
+  overflow: hidden !important;
+  overflow-x: visible !important;  */
+}
+
+.crafting_tables::-webkit-scrollbar {
+  width: 10px;
+  background-color: #272727;
+}
+
+.crafting_table {
+  /* width: 410px; */
+  width: 33%;
+  height: 200px !important;
+  display: flex;
+  flex-direction: column;
+  min-width: 400px;
+  /* box-sizing: border-box; */
+  /* border-left: 1px solid rgb(39, 39, 39); */
+}
+
+.crafting_item {
+  width: 32%;
+  background-color: #4927007a;
+  height: fit-content;
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 168px;
+}
+
+.crafting_table > .crafting_info { 
+  display: flex;
+  flex-direction: row;
+}
+
+/* .crafting_table > .crafting_info > h3 {
+  font-size: 16px;
+} */
+
+.crafting_table > .crafting_info > .crafting_info_details {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  /* justify-content: center; */
+  /* align-items: center; */
+}
+
+.crafting_table > .crafting_info > .crafting_info_details > .craft_reqs {
+  display: flex;
+  flex-direction: row;
+  /* flex-wrap: wrap; */
+  gap: 5px;
+  /* justify-content: center; */
+  /* align-items: center; */
+}
+
+
+.ct_crafting_item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+  height: 50%;
+}
+
+.ct_crafting_item > .crafting_data {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.ct_crafting_item > img {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+}
+
+.ct_crafting_info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;
+}
+
+.locked-crafting-table {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.locked-crafting-table > img {
+  filter: grayscale(100%);
+  width: 100px;
+}
+
+.ct_crafting_time {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  padding: 0 5px;
+  font-size: 25px;
+}
+

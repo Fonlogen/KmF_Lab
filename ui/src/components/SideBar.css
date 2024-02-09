@@ -1,0 +1,73 @@
+.sidebar {
+  border-right: 1px solid rgb(78, 54, 19);
+  height: 100%;
+  padding-right: 10px;
+  margin-right: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  width: 80px;
+  gap: 15px;
+  min-width: 80px;
+}
+
+.page_button {
+  position: relative;
+  background-color: transparent;
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page_button:hover {
+  filter: brightness(0.8);
+}
+
+.active_page {
+  background-color: #53390081;
+}
+
+
+.page_button > .locked-page {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
+  /* opacity: 0.5; */
+}
+
+.page_button > .locked-page > .lockedpage-lock {
+  position: absolute;
+  width: 30px;
+  padding: 5px;
+  z-index: 2;
+}
+
+.page_button > .locked-page > .locked-page-bg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 10px;
+  background-color: #53320000; 
+  z-index: 1;
+}
+
+.menubutton-img {
+  width: 35px;
+  height: 35px;
+  object-fit: cover;
+  object-position: center;
+}
+
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

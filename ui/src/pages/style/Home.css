@@ -1,0 +1,223 @@
+@import url('https://fonts.googleapis.com/css2?family=Lato:wght@100;400;700&family=Quicksand:wght@300;400;700&display=swap');
+
+.home_page {
+  display: flex;
+  flex-direction: column;   
+  width: 100%;
+  height: 100%;
+  gap: 5px;
+}
+
+.home_page > h2 {
+  text-align: center;
+  border-bottom: 1px solid rgb(39, 39, 39);
+  padding-bottom: 10px;
+}
+
+.home_page > .gestione-azienda {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+}
+
+.home_page > .gestione-azienda > .info-azienda {
+  width: 50%;
+}
+
+.home_page > .gestione-azienda > .gestione-dipendenti {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.divider {
+  border-left: 1px solid rgb(78, 54, 19);
+}
+
+.gestione-azienda h2 {
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.info-azienda {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+
+.info-azienda > .info-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 10px 10px;
+  /* font-weight: ; */
+  font-family: 'Lato', 'Helvetica Neue',
+}
+
+.info-item > .info-title {
+  font-weight: 500;
+}
+
+.info-item > .info-value {
+  font-weight: 200;
+}
+
+.employee-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 0 10px;
+  flex: 1;
+  max-height: 532px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+li:nth-child(odd) {
+  background-color: #5a330000;
+  list-style: none;
+}
+
+li:nth-child(even) { 
+  background-color: #5a2c0034;
+  border-radius: 10px;
+  list-style: none;
+}
+
+.employee-assumption {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 5px 10px;
+}
+
+.employee-assumption > div {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}
+
+.employee-assumption > h3 {
+  font-size: 16px;
+  font-weight: 400;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.employee-assumption > div > input[type="number"] {
+  width: 150px;
+  background-color: transparent;
+  border: 0;
+  border-bottom: 1px solid rgb(78, 57, 19);
+  font-size: 16px;
+  color: white;
+  text-align: center;
+  outline: none;
+  padding: 5px 10px;
+  font-weight: 100;
+}
+
+.employee-assumption > div > input[type="number"]:focus {
+  border-color: rgb(47, 118, 252);
+}
+
+.employee-assumption > div > input[type="button"] {
+  width: fit-content;
+  font-size: 16px;
+  padding: 5px 20px;
+  background-color: rgb(47, 118, 252);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.employee-assumption > div > input[type="button"]:hover {
+  filter: brightness(0.9)
+}
+
+.employee-assumption > div > input[type="button"]:active {
+  filter: brightness(0.7);
+}
+
+.employee-container h4 {
+  text-align: center;
+  display: flex;
+  font-weight: 200;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.employee-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}
+
+.employee-button {
+  width: fit-content;
+  padding: 5px 10px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+}
+
+.employee-container > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgb(82, 43, 11);
+  padding: 10px 10px;
+}
+
+.employee-container > div > div {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.employee-container > div > div > .employee-grade {
+  font-size: 12px;
+}
+
+.employee-container > div > div > .employee-name {
+  font-weight: 700;
+}
+
+.employee-container > div > div > .employee-assumption-date {
+  font-size: 12px;
+}
+
+.promote {
+  background-color: rgb(7, 192, 78);
+}
+
+.fire {
+  background-color: rgb(199, 45, 45);
+}
+
+.degrade {
+  background-color: rgb(228, 148, 0);
+}
