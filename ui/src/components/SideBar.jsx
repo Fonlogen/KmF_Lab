@@ -28,7 +28,7 @@ function SideBar(props) {
     shop: false,
     crafting: false,
     deposit: false,
-    attack: true,
+    attack: false,
     // chest: false,
     settings: false,
     home: false,
@@ -50,14 +50,14 @@ function SideBar(props) {
         {/* <MenuPageButton page="settings" switchPage={props.switchPage} activePage={props.activePage} logo={settingsLogo} ps={props.playSound}  /> */}
         <MenuButton key={'settings'}  action={() => {props.toggleFullscreen(); props.playSound();}} logo={fullscreenLogo} ps={props.playSound}  />
         <MenuButton key={'close'}     action={closePage} logo={closeLogo} ps={props.playSound}  />
-      </div>     
+      </div>
     </div>
   )
 }
 
 function MenuButton(props) {
   return (
-    <div 
+    <div
       className="page_button"
       onClick={() => {
         props.action();
@@ -73,7 +73,7 @@ function MenuButton(props) {
 function MenuPageButton(props) {
 
   return (
-    <div 
+    <div
       className={"page_button" + (props.activePage == props.page ? " active_page" : "")}
       onClick={
         () => {
@@ -85,7 +85,7 @@ function MenuPageButton(props) {
               if (props.locked[page]) {
                 return;
               } else {
-                props.switchPage(props.page); 
+                props.switchPage(props.page);
                 props.ps();
               }
             }

@@ -141,6 +141,19 @@ function Attack({ lab, config }) {
     });
   };
 
+  const hasAllInfo = (lab) => {
+    if (spyLabs) {
+      if (spyLabs[lab]?.['LabInfo']?.extraInfo?.owner !== 'LIVELLO SPIA NON SUFFICIENTE' && spyLabs[lab]?.['LabInfo']?.extraInfo?.resources.attacker !== 'LIVELLO SPIA NON SUFFICIENTE' && spyLabs[lab]?.['LabInfo']?.extraInfo?.resources.defender !== 'LIVELLO SPIA NON SUFFICIENTE' && spyLabs[lab]?.['LabInfo']?.extraInfo?.resources.money !== 'LIVELLO SPIA NON SUFFICIENTE' && spyLabs[lab]?.['LabInfo']?.extraInfo?.resources.items !== 'LIVELLO SPIA NON SUFFICIENTE') {
+        console.log('Hai tutte le informazioni');
+        return true;
+      }
+      console.log('Non hai tutte le informazioni');
+      return false;
+    }
+    console.log('Non hai tutte le informazioni');
+    return false;
+  }
+
   return (
     <div className='attack_page'>
       <h2 className="title">Attacca laboratori rivali</h2>
@@ -189,52 +202,35 @@ function Attack({ lab, config }) {
                     Object.keys(spyLabs).map((lab, index) => {
                       return (
                         <div className="spied-lab" key={index}>
-                          <span className="spied-lab-name">{spyLabs[lab].name}</span>
+                          <span className="spied-lab-name">Laboratorio Rivale</span>
                           <div className="spied-lab-owner">
                             <span className="spied-lab-owner-title">Proprietario</span>
-                            <span className="spied-lab-owner-value">{spyLabs[lab].owner.name || 'Nessuna informazione'}</span>
+                            <span className="spied-lab-owner-value">{spyLabs[lab]?.['LabInfo']?.extraInfo?.owner || 'Nessuna informazione'}</span>
                           </div>
-                          {/* <div className='lab-employees'>
-                            <span className="spied-lab-employees-title">Dipendenti</span>
-                            {
-                              <div className="spied-lab-employees-list">
-                              {
-                                spyLabs[lab].employees ?
-                                spyLabs[lab].employees.map((employee, index) => {
-                                  return (
-                                    <span className="spied-lab-employee" key={index}>{employee.name}</span>
-                                  )
-                                }) : (
-                                  <span className="spied-lab-employee">Nessuna informazione</span>
-                                )
-                              }
-                              </div>
-                            }
-                          </div> */}
                           <div className="spied-lab-resources">
                             <span className="spied-lab-resources-title">Risorse</span>
                             <div className="spied-lab-resources-list">
                               <div className="spied-lab-resource">
                                 <span className="spied-lab-resource-title">Attaccanti</span>
-                                <span className="spied-lab-resource-value">{spyLabs[lab].resources.attacker || 'Nessuna informazione'}</span>
+                                <span className="spied-lab-resource-value">{spyLabs[lab]?.['LabInfo']?.extraInfo?.resources?.attacker || 0}</span>
                               </div>
                               <div className="spied-lab-resource">
                                 <span className="spied-lab-resource-title">Difensori</span>
-                                <span className="spied-lab-resource-value">{spyLabs[lab].resources.defender || 'Nessuna informazione'}</span>
+                                <span className="spied-lab-resource-value">{spyLabs[lab]?.['LabInfo']?.extraInfo?.resources?.defender || 0}</span>
                               </div>
                               <div className="spied-lab-resource">
                                 <span className="spied-lab-resource-title">Soldi</span>
-                                <span className="spied-lab-resource-value">{spyLabs[lab].resources.money || 'Nessuna informazione'}</span>
+                                <span className="spied-lab-resource-value">{spyLabs[lab]?.['LabInfo']?.extraInfo?.resources?.money || 0}</span>
                               </div>
                               <div className="spied-lab-resource">
-                                <span className="spied-lab-resource-title">Magazzino</span>
-                                <span className="spied-lab-resource-value">{spyLabs[lab].resources.items.length || 'Nessuna informazione'}</span>
+                                <span className="spied-lab-resource-title">Totale magazzino</span>
+                                <span className="spied-lab-resource-value">{spyLabs[lab]?.['LabInfo']?.extraInfo?.resources?.items || 0}</span>
                               </div>
                             </div>
                           </div>
                           <div className="spied-lab-actions">
                             <button className="spied-lab-action-btn attack">Attacca</button>
-                            <button className="spied-lab-action-btn info">Ottieni più informazioni</button>
+                            <button className={"spied-lab-action-btn " + (hasAllInfo(lab) ? 'disabled' : 'info')}>Ottieni più informazioni</button>
                           </div>
                         </div>
                       )
@@ -263,7 +259,7 @@ function Attack({ lab, config }) {
             <div className='no-spy'>
               <span className="no-spy-labs">Nessuna informazione sui laboratori rivali</span>
               <div className="buy-spy">
-                <button className="buy-spy-btn" onClick={() => setIsBuyNuiOpen(true)}>Assolda una spia - ${config.SpyBaseCost || 0}</button>
+                <button className="buy-spy-btn" onClick={() => handleBuySpy()}>Assolda una spia - ${config.SpyBaseCost || 0}</button>
               </div>
             </div>
           )

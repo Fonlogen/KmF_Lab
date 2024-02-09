@@ -36,7 +36,7 @@ Labs.LoadLabs = function()
         if LabsData[v.LabID]['LabInfo'].DailyChest == nil or LabsData[v.LabID]['LabInfo'].DailyChest == 0 then
           LabsData[v.LabID]['LabInfo'].DailyChest = exports.KmF_Lib:convertToSeconds(os.date('%Y-%m-%d %H:%M:%S', os.time()))
         end
-        
+
         if LabsData[v.LabID]['BoughtUpgrades']['crafting_table_upgrade']['level'] <= 1 then
           -- print('Removing crafting table from lab ' .. v.LabID)
           LabsData[v.LabID]['Crafting']['Tables'] = {
@@ -46,7 +46,7 @@ Labs.LoadLabs = function()
               remainingTime = nil,
               percentage = nil,
               ready = false,
-              locked = false,   
+              locked = false,
             },
           }
         end
@@ -83,13 +83,20 @@ Labs.LoadLabs = function()
             end
             -- print('Added upgrade ' .. k .. ' to lab ' .. v.LabID)
           end
+
+          if v.disabled then
+            LabsData[v.LabID]['BoughtUpgrades'][x].disabled = true
+          else
+            LabsData[v.LabID]['BoughtUpgrades'][x].disabled = false
+          end
+
         end
 
         for idx, value in pairs(LabsData[v.LabID]['Employees']) do
           -- DebugPrint('^00^11^22^33^44^55^66^77^88^99')
-          DebugPrint('^5[' .. v.LabID .. '] -> ^3Sending lab to player ' .. idx)
           local xPlayer = ESX.GetPlayerFromIdentifier(idx)
           if xPlayer then
+            DebugPrint('^5[' .. v.LabID .. '] -> ^3Sending lab to player ' .. idx)
             TriggerClientEvent('KmF_Lab:Client:SetLab', xPlayer.source, LabsData[v.LabID])
           end
         end
@@ -100,6 +107,24 @@ Labs.LoadLabs = function()
   end)
   return true
 end
+
+Labs.WipeLab = function(LabID)
+  MySQL.Async.execute('DELETE FROM kmf_lab WHERE LabID = @LabID', {['@LabID'] = LabID}, function(rowsChanged)
+    if rowsChanged > 0 then
+      DebugPrint('^1Wiped ' .. rowsChanged .. ' labs from database')
+    else
+      DebugPrint('^8[ERROR] ^1Lab ' .. LabID .. ' not wiped')
+    end
+  end)
+
+  LabsData[LabID] = nil
+  return true
+end
+
+RegisterServerEvent('KmF_Lab:Server:WipeLab')
+AddEventHandler('KmF_Lab:Server:WipeLab', function(LabID)
+  Labs.WipeLab(LabID)
+end)
 
 Labs.WipeLabs = function()
   MySQL.Async.execute('DELETE FROM kmf_lab', {}, function(rowsChanged)
@@ -947,7 +972,7 @@ Labs.PromoteEmployee = function ( LabId, Employee )
 
   exports['KmF_Lib']:DiscordLog('lab', 'Dipendente promosso',
   'LabID: ' .. LabId ..
-  '\nGiocatore: ' .. Employee)
+  '\nGiocatore: ' .. Employee.name .. ' [' .. Employee.identifier .. ']')
 
   Labs.UpdateLabEmployees(LabId)
 
@@ -1065,7 +1090,7 @@ Citizen.CreateThread(function()
     if autosave then
 
       exports['KmF_Lib']:DiscordLog('lab', 'SALVATAGGIO LABORATORI',
-      'Laboratori salvati sul database' .. 
+      'Laboratori salvati sul database' ..
       '\nOrario: ' .. os.date('%d/%m/%Y %H:%M:%S') ..
       '\nNumero laboratori: ' .. #LabsData)
 
@@ -1080,7 +1105,7 @@ AddEventHandler('txAdmin:events:scheduledRestart', function(eventData)
       Wait(10000)
 
       exports['KmF_Lib']:DiscordLog('lab', 'SALVATAGGIO LABORATORI (RESTART)',
-      'Laboratori salvati sul database' .. 
+      'Laboratori salvati sul database' ..
       '\nOrario: ' .. os.date('%d/%m/%Y %H:%M:%S') ..
       '\nNumero laboratori: ' .. #LabsData)
 
@@ -1101,7 +1126,7 @@ AddEventHandler('KmF_Lab:Server:GiveRandomBox', function(token)
   local xPlayer = ESX.GetPlayerFromId(src)
 
   local randN = math.random(1, 3)
-  -- print(randN)
+  print(randN)
 
   local item = Config.FakeLabItems[randN]
 
@@ -1112,5 +1137,154 @@ AddEventHandler('KmF_Lab:Server:GiveRandomBox', function(token)
 
   xPlayer.addInventoryItem(item, 1)
   TriggerClientEvent('esx:showNotification', src, 'Hai raccolto un ' .. allitems[item].label, 'success')
+
+end)
+
+Labs.GetLabSpyExtraInfo = function(labId, myLabId)
+  local extraInfo = {}
+
+  DebugPrint('Getting extra info for lab ' .. labId)
+  DebugPrint('My lab ID: ' .. myLabId)
+
+  local spyLevel = LabsData[myLabId]['BoughtUpgrades']['attack_spy_upgrade']['level']
+
+  DebugPrint('Spy level: ' .. spyLevel)
+
+  if spyLevel == 0 then
+    DebugPrint('Spy level 0 - no extra info')
+    return nil
+  end
+
+  if spyLevel >= 1 then
+    DebugPrint('Spy level 1 - getting owner info')
+    -- local xOwner = ESX.GetPlayerFromIdentifier(LabsData[labId]['Owner'])
+    local pInfo = MySQL.query.await('SELECT * FROM users WHERE identifier = @identifier', {
+      ['@identifier'] = LabsData[labId]['Owner']
+    })
+
+    while not pInfo do
+      Citizen.Wait(100)
+    end
+
+    extraInfo.owner = pInfo[1].firstname .. ' ' .. pInfo[1].lastname
+  else
+    extraInfo.owner = 'LIVELLO SPIA NON SUFFICIENTE'
+  end
+
+  extraInfo.resources = {}
+
+  if spyLevel >= 2 then
+    DebugPrint('Spy level 2 - getting resources info')
+    extraInfo['resources'].money = LabsData[labId]['Accounts'].Balance
+  else
+    extraInfo['resources'].money = 'LIVELLO SPIA NON SUFFICIENTE'
+  end
+
+  if spyLevel >= 3 then
+    DebugPrint('Spy level 3 - getting deposit info')
+    extraInfo['resources'].items = ESX.Table.SizeOf(LabsData[labId]['Deposit'])
+  else
+    extraInfo['resources'].items = 'LIVELLO SPIA NON SUFFICIENTE'
+  end
+
+  if spyLevel >= 4 then
+    DebugPrint('Spy level 4 - getting attack power info')
+    extraInfo['resources'].attacker = LabsData[labId]['LabInfo'].AttackPower
+  else
+    extraInfo['resources'].attacker = 'LIVELLO SPIA NON SUFFICIENTE'
+  end
+
+  if spyLevel >= 5 then
+    DebugPrint('Spy level 5 - getting defence power info')
+    extraInfo['resources'].defender = LabsData[labId]['LabInfo'].DefencePower
+  else
+    extraInfo['resources'].defender = 'LIVELLO SPIA NON SUFFICIENTE'
+  end
+
+  return extraInfo
+end
+
+Labs.GetRandomSpiedLabs = function(labId)
+  local spiedLabs = {}
+
+  for i = 1, 2 do
+    ::reroll::
+    local randN = math.random(1, ESX.Table.SizeOf(LabsData))
+    local n = 0
+    for k, v in pairs(LabsData) do
+      n = n + 1
+      if n == randN then
+        if k ~= labId then
+
+          if i > 1 and spiedLabs[1]['LabInfo'].LabID == k then
+            DebugPrint('Got a lab with same LabID, rerolling')
+            goto reroll
+          end
+
+          lab = LabsData[k]
+          extraInfo = Labs.GetLabSpyExtraInfo(k, labId)
+          lab['LabInfo'].extraInfo = extraInfo or nil
+
+          print(ESX.DumpTable(lab['LabInfo'].extraInfo))
+
+          table.insert(spiedLabs, LabsData[k])
+        else
+          DebugPrint('Same LabID, rerolling')
+          goto reroll
+        end
+      end
+    end
+  end
+
+  return spiedLabs
+end
+
+Citizen.CreateThread(function()
+  while true do
+    Citizen.Wait(500)
+    for k, v in pairs(LabsData) do
+      if v['LabInfo'].spyTime then
+        if v['LabInfo'].spyTime > 0 then
+          v['LabInfo'].spyTime = v['LabInfo'].spyTime - 60
+
+          if v['LabInfo'].spyTime <= 0 then
+            DebugPrint('Spy time ended for lab ' .. k)
+            local spiedLabs = Labs.GetRandomSpiedLabs(k)
+
+            LabsData[k]['LabInfo'].spiedLabs = spiedLabs
+          end
+
+          Labs.UpdateLabEmployees(k)
+        end
+      end
+    end
+  end
+end)
+
+ESX.RegisterServerCallback('KmF_Lab:Server:BuySpy', function(src, cb, labId)
+  local xPlayer = ESX.GetPlayerFromId(src)
+
+  local moneyQty = LabsData[labId]['Accounts'].Balance
+
+  local SpyPrice = Config.SpyBaseCost
+
+  if moneyQty >= SpyPrice then
+    LabsData[labId]['Accounts'].Balance = LabsData[labId]['Accounts'].Balance - SpyPrice
+
+    -- Set spy time
+    LabsData[labId]['LabInfo'].spyTime = Config.SpyTime
+
+    exports['KmF_Lib']:DiscordLog('lab', 'SHOP - Acquisto spia',
+    'LabID: ' .. labId ..
+    '\nPrezzo: ' .. SpyPrice .. ' $' ..
+    '\nGiocatore: ' .. GetPlayerName(xPlayer.source) ..
+    '\nLicense: ' .. xPlayer.identifier)
+
+    Labs.UpdateLabEmployees(labId)
+
+    cb({status = true})
+  else
+    cb({status = false, reason = 'Non hai abbastanza saldo nel laboratorio'})
+  end
 
 end)

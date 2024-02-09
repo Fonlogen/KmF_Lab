@@ -8,7 +8,7 @@ let dictionary = {
 }
 
 function TranslateStr(input) {
-  return dictionary[input] || input;
+  return dictionary[input] || null;
 }
 
 export default TranslateStr;

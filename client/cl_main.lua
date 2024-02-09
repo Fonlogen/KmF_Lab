@@ -119,7 +119,7 @@ Citizen.CreateThread(function()
                 item.elapsedTime = item.elapsedTime + 1
                 v2.remainingTime = v2.remainingTime - 1
                 v2.percentage = ((item.time - (item.time-item.elapsedTime)) * 100) / item.time
-                
+
                 if v2.syncOwner == myIdentifier then
                     if cnt == 5 then
                         if v2.syncOwner == myIdentifier then
@@ -341,7 +341,6 @@ RegisterNUICallback('startCraft', function(data)
             ESX.ShowNotification(cb.reason, 'error')
         end
     end, myLab['LabID'], tableKey, item)
-    
 end)
 
 RegisterNetEvent('KmF_Lab:Client:SetLab')
@@ -355,7 +354,6 @@ AddEventHandler('KmF_Lab:Client:SetLab', function(lab)
                 lab = myLab,
             }
         })
-        
     end
 end)
 
@@ -446,6 +444,17 @@ if Config.Debug then
     RegisterCommand('wipelabs', function(source, args, rawCommand)
         TriggerServerEvent('KmF_Lab:Server:WipeLabs')
     end, false)
+
+    RegisterCommand('wipelab', function(source, args, rawCommand)
+        local labId = args[1] or nil
+
+        if labId == nil then
+            ESX.ShowNotification('Devi specificare un Lab ID', 'error')
+            return
+        end
+
+        TriggerServerEvent('KmF_Lab:Server:WipeLab', labId)
+    end, false)
 end
 
 RegisterCommand('savelabs', function(source, args, rawCommand)
@@ -504,21 +513,6 @@ Citizen.CreateThread(function()
     end
 end)
 
--- RegisterNetEvent('KmF_Utils:Client:UnloadScaleform')
--- AddEventHandler('KmF_Utils:Client:UnloadScaleform', function(sfHandle, duiObj)
---     -- print('UNLOADING SCALEFORM - ' .. sfHandle)
---     -- DestroyDui(duiObj)
---     SetScaleformMovieAsNoLongerNeeded(sfHandle)
--- end)
-
--- AddEventHandler('onResourceStop', function(resName)
---     if resName == 'KmF_Lib' then
---         TriggerEvent('KmF_Utils:Client:UnloadScaleform', sfHandle, duiObj)
---     end
--- end)
-
-
-
 -- NPCS
 
 Citizen.CreateThread(function()
@@ -542,7 +536,6 @@ Citizen.CreateThread(function()
     SetPedCombatAttributes(npc, 46, true)
     SetPedFleeAttributes(npc, 0, 0)
     SetPedConfigFlag(npc, 118, true)
-    
 end)
 
 
@@ -562,7 +555,6 @@ Citizen.CreateThread(function()
         if isInPolyzone then
             -- print('in garage')
             sleep = 1
-            
             HideMinimapExteriorMapThisFrame()
             SetRadarZoom(10)
         else
@@ -585,9 +577,6 @@ bunkerPoly:onPointInOut(PolyZone.getPlayerPosition, function(isPointInside, poin
         -- TriggerServerEvent('KmF_DealerShip:Server:SetInInterior', false)
     end
 end)
-
-
-
 
 for k, v in pairs(Config.FakeLabPositions) do
     TriggerEvent('gridsystem:registerMarker', {
@@ -636,7 +625,7 @@ for k, v in pairs(Config.FakeLabPositions) do
                     Mouse = true,
                     Player = true,
                     Vehicle = true
-                },    
+                },
                 onStart = function()
                     -- do something when progress starts
                 end,
@@ -650,3 +639,13 @@ for k, v in pairs(Config.FakeLabPositions) do
         end
     })
 end
+
+RegisterNUICallback('attack/buySpy', function()
+    ESX.TriggerServerCallback('KmF_Lab:Server:BuySpy', function(cb)
+        if cb.status then
+            ESX.ShowNotification('Spia acquistata con successo', 'success')
+        else
+            ESX.ShowNotification(cb.reason, 'error')
+        end
+    end, myLab['LabID'])
+end)

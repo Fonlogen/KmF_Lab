@@ -24,7 +24,7 @@ const App = () => {
 
   const [showUi, setShowUi] = useState(false); // Toggle visibility
   const [buyLabDialog, showBuyLabDialog] = useState(false);
-  
+
   const [lab, setLab] = useState({
     LabInfo: {
       "test": "test2",
@@ -76,7 +76,7 @@ const App = () => {
       }
     },
   });
- 
+
   const [config, setConfig] = useState({
 
   });

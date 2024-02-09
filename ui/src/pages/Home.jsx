@@ -41,12 +41,15 @@ function Home(props) {
         <div className="info-azienda">
           <h2>Informazioni sul laboratorio</h2>
           <ul className='info-container'>
-            
             { info &&
               Object.keys(info).map((key, idx) => {
-                if (key == 'DailyChest') {
+                let translaction = TranslateStr(key)
+                if (translaction == null) {
                   return
                 }
+                // if (key == 'DailyChest') {
+                //   return
+                // }
                 return <Info key={idx} title={TranslateStr(key)} value={info[key]} />
               })
             }
