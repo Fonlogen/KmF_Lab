@@ -1,4 +1,189 @@
-ESX = exports.es_extended:getSharedObject()
+local Core = nil
+
+if Config.Framework == 'qbcore' then
+  Core = exports['qb-core']:GetCoreObject()
+else
+  Core = exports['es_extended']:getSharedObject()
+end
+
+local function TableSize(tbl)
+  local count = 0
+  for _ in pairs(tbl or {}) do count = count + 1 end
+  return count
+end
+
+local function DumpTable(tbl)
+  return json.encode(tbl)
+end
+
+local GetPlayerNameNative = GetPlayerName
+
+local function DecoratePlayer(player)
+  if not player then return nil end
+
+  if Config.Framework == 'qbcore' then
+    local pdata = player.PlayerData or {}
+    player.source = player.PlayerData and player.PlayerData.source or player.source
+    player.identifier = pdata.citizenid or pdata.license or tostring(player.source)
+    player.name = ((pdata.charinfo and ((pdata.charinfo.firstname or '') .. ' ' .. (pdata.charinfo.lastname or ''))) or pdata.name or GetPlayerNameNative(player.source) or ''):gsub('^%s+', ''):gsub('%s+$', '')
+    player.canCarryItem = function(item, amount)
+      return CanCarryItem(player.source, item, amount)
+    end
+    player.addInventoryItem = function(item, amount)
+      return AddInventoryItem(player.source, item, amount)
+    end
+    player.getGroup = function()
+      return IsPlayerAceAllowed(player.source, 'command') and 'admin' or 'user'
+    end
+  else
+    player.identifier = player.identifier or player.getIdentifier and player.getIdentifier() or tostring(player.source)
+    player.name = player.name or GetPlayerNameNative(player.source)
+    player.canCarryItem = player.canCarryItem or function(item, amount) return CanCarryItem(player.source, item, amount) end
+    player.addInventoryItem = player.addInventoryItem or function(item, amount) return AddInventoryItem(player.source, item, amount) end
+    player.getGroup = player.getGroup or function() return 'user' end
+  end
+
+  return player
+end
+
+function GetPlayer(source)
+  if Config.Framework == 'qbcore' then
+    return DecoratePlayer(Core.Functions.GetPlayer(source))
+  end
+
+  return DecoratePlayer(Core.GetPlayerFromId(source))
+end
+
+function GetPlayerByIdentifier(identifier)
+  if Config.Framework == 'qbcore' then
+    local players = Core.Functions.GetQBPlayers()
+    for _, player in pairs(players) do
+      player = DecoratePlayer(player)
+      if player.identifier == identifier then
+        return player
+      end
+    end
+    return nil
+  end
+
+  return DecoratePlayer(Core.GetPlayerFromIdentifier(identifier))
+end
+
+function RegisterFrameworkCallback(name, cb)
+  if Config.Framework == 'qbcore' then
+    Core.Functions.CreateCallback(name, cb)
+    return
+  end
+
+  Core.RegisterServerCallback(name, cb)
+end
+
+function ShowFrameworkNotification(src, msg, msgType)
+  TriggerClientEvent('KmF_Lab:Client:Notify', src, msg, msgType or 'primary')
+end
+
+function GetInventoryItemList()
+  if Config.Inventory == 'ox_inventory' then
+    return exports.ox_inventory:Items() or {}
+  end
+
+  if Config.Inventory == 'qb_inventory' then
+    return Core.Shared and Core.Shared.Items or {}
+  end
+
+  return exports['qs-inventory']:GetItemList() or {}
+end
+
+function GetItemCount(src, item)
+  if Config.Inventory == 'ox_inventory' then
+    return exports.ox_inventory:Search(src, 'count', item) or 0
+  end
+
+  if Config.Inventory == 'qb_inventory' then
+    local player = GetPlayer(src)
+    local data = player and player.Functions and player.Functions.GetItemByName(item)
+    return data and data.amount or 0
+  end
+
+  return exports['qs-inventory']:GetItemTotalAmount(src, item) or 0
+end
+
+function RemoveInventoryItem(src, item, amount)
+  if Config.Inventory == 'ox_inventory' then
+    return exports.ox_inventory:RemoveItem(src, item, amount)
+  end
+
+  if Config.Inventory == 'qb_inventory' then
+    local player = GetPlayer(src)
+    return player and player.Functions.RemoveItem(item, amount)
+  end
+
+  return exports['qs-inventory']:RemoveItem(src, item, amount)
+end
+
+function AddInventoryItem(src, item, amount)
+  if Config.Inventory == 'ox_inventory' then
+    return exports.ox_inventory:AddItem(src, item, amount)
+  end
+
+  if Config.Inventory == 'qb_inventory' then
+    local player = GetPlayer(src)
+    return player and player.Functions.AddItem(item, amount)
+  end
+
+  return exports['qs-inventory']:AddItem(src, item, amount)
+end
+
+function CanCarryItem(src, item, amount)
+  if Config.Inventory == 'ox_inventory' then
+    return exports.ox_inventory:CanCarryItem(src, item, amount)
+  end
+
+  if Config.Inventory == 'qb_inventory' then
+    local ok = exports['qb-inventory']:CanAddItem(src, item, amount)
+    return ok == true or ok == nil
+  end
+
+  local player = GetPlayer(src)
+  return player and player.canCarryItem and player.canCarryItem(item, amount) or false
+end
+
+function GetPlayerInventory(src)
+  if Config.Inventory == 'ox_inventory' then
+    local items = exports.ox_inventory:GetInventoryItems(src) or {}
+    local formatted = {}
+    for _, item in pairs(items) do
+      if item and item.name then
+        formatted[item.name] = {
+          name = item.name,
+          label = item.label or item.name,
+          qty = item.count or item.amount or 0,
+          image = item.name,
+        }
+      end
+    end
+    return formatted
+  end
+
+  if Config.Inventory == 'qb_inventory' then
+    local player = GetPlayer(src)
+    local items = player and player.PlayerData and player.PlayerData.items or {}
+    local formatted = {}
+    for _, item in pairs(items) do
+      if item and item.name then
+        formatted[item.name] = {
+          name = item.name,
+          label = item.label or item.name,
+          qty = item.amount or 0,
+          image = item.image or item.name,
+        }
+      end
+    end
+    return formatted
+  end
+
+  return exports['qs-inventory']:GetInventory(src) or {}
+end
 
 local LabsData = {}
 
@@ -31,7 +216,7 @@ Labs.LoadLabs = function()
           Crafting = json.decode(v.Crafting),
         }
 
-        -- print(ESX.DumpTable(LabsData[v.LabID]['BoughtUpgrades']))
+        -- print(DumpTable(LabsData[v.LabID]['BoughtUpgrades']))
 
         if LabsData[v.LabID]['LabInfo'].DailyChest == nil or LabsData[v.LabID]['LabInfo'].DailyChest == 0 then
           LabsData[v.LabID]['LabInfo'].DailyChest = exports.KmF_Lib:convertToSeconds(os.date('%Y-%m-%d %H:%M:%S', os.time()))
@@ -94,7 +279,7 @@ Labs.LoadLabs = function()
 
         for idx, value in pairs(LabsData[v.LabID]['Employees']) do
           -- DebugPrint('^00^11^22^33^44^55^66^77^88^99')
-          local xPlayer = ESX.GetPlayerFromIdentifier(idx)
+          local xPlayer = GetPlayerByIdentifier(idx)
           if xPlayer then
             DebugPrint('^5[' .. v.LabID .. '] -> ^3Sending lab to player ' .. idx)
             TriggerClientEvent('KmF_Lab:Client:SetLab', xPlayer.source, LabsData[v.LabID])
@@ -150,13 +335,13 @@ end)
 RegisterServerEvent('KmF_Lab:Server:SaveLabs')
 AddEventHandler('KmF_Lab:Server:SaveLabs', function()
   local src = source
-  local xPlayer = ESX.GetPlayerFromId(src)
+  local xPlayer = GetPlayer(src)
 
   if xPlayer.getGroup() == 'superadmin' or xPlayer.getGroup() == 'admin' then
     Labs.SaveLabs()
-    TriggerClientEvent('esx:showNotification', src, 'Laboratori salvati', 'success')
+    ShowFrameworkNotification(src, 'Laboratori salvati', 'success')
   else
-    TriggerClientEvent('esx:showNotification', src, 'Non hai i permessi per eseguire questo comando', 'error')
+    ShowFrameworkNotification(src, 'Non hai i permessi per eseguire questo comando', 'error')
   end
 end)
 
@@ -168,8 +353,8 @@ AddEventHandler('onResourceStop', function(resourceName)
   Labs.SaveLabs()
 end)
 
-ESX.RegisterServerCallback('KmF_Lab:Server:GetPlayerIdentifier', function(source, cb)
-  local xPlayer = ESX.GetPlayerFromId(source)
+RegisterFrameworkCallback('KmF_Lab:Server:GetPlayerIdentifier', function(source, cb)
+  local xPlayer = GetPlayer(source)
   cb(xPlayer.identifier)
 end)
 
@@ -201,18 +386,18 @@ Labs.GetLabs = function()
   return
 end
 
-ESX.RegisterServerCallback('KmF_Lab:Server:BuyLab', function(source, cb)
-  local xPlayer = ESX.GetPlayerFromId(source)
+RegisterFrameworkCallback('KmF_Lab:Server:BuyLab', function(source, cb)
+  local xPlayer = GetPlayer(source)
 
-  if Labs.CheckEmployee({identifier = identifier}).status then
+  if Labs.CheckEmployee({identifier = xPlayer.identifier}).status then
     cb({ status = false, reason = 'Sei gia in un laboratorio' })
     return
   end
 
-  local money = exports['qs-inventory']:GetItemTotalAmount(xPlayer.source, 'black_money')
+  local money = GetItemCount(xPlayer.source, 'black_money')
 
   if money >= Config.LabPrice then
-    exports['qs-inventory']:RemoveItem(xPlayer.source, 'black_money', Config.LabPrice)
+    RemoveInventoryItem(xPlayer.source, 'black_money', Config.LabPrice)
     Labs.CreateLab(xPlayer)
     cb({ status = true })
   else
@@ -233,25 +418,25 @@ Labs.AddNewTable = function ( labID )
   table.insert(LabsData[labID]['Crafting']['Tables'], newTable)
 end
 
-ESX.RegisterServerCallback('KmF_Lab:Server:GetDailyChest', function(src, cb, labId)
-  local xPlayer = ESX.GetPlayerFromId(src)
+RegisterFrameworkCallback('KmF_Lab:Server:GetDailyChest', function(src, cb, labId)
+  local xPlayer = GetPlayer(src)
   local currentTime = exports.KmF_Lib:convertToSeconds(os.date('%Y-%m-%d %H:%M:%S', os.time()))
   if LabsData[labId]['LabInfo'].DailyChest > currentTime then
-    TriggerClientEvent('esx:showNotification', src, 'Hai gia ritirato la cassa gratuita giornaliera oggi, torna domani!', 'error')
+    ShowFrameworkNotification(src, 'Hai gia ritirato la cassa gratuita giornaliera oggi, torna domani!', 'error')
     cb({status = false, lab = LabsData[labId]})
   end
 
   if LabsData[labId]['LabInfo'].DailyChest <= currentTime then
-    if xPlayer.canCarryItem('lab_lootbox', 1) then
-      xPlayer.addInventoryItem('lab_lootbox', 1)
-      TriggerClientEvent('esx:showNotification', src, 'Hai ritirato la tua cassa gratuita giornaliera!', 'success')
+    if CanCarryItem(src, 'lab_lootbox', 1) then
+      AddInventoryItem(src, 'lab_lootbox', 1)
+      ShowFrameworkNotification(src, 'Hai ritirato la tua cassa gratuita giornaliera!', 'success')
       LabsData[labId]['LabInfo'].DailyChest = exports.KmF_Lib:convertToSeconds(os.date('%Y-%m-%d %H:%M:%S', os.time())) + 86400
       cb({status = true, lab = LabsData[labId]})
       -- UpdateLabEmployees(labId)
       Labs.UpdateLabEmployees(labId)
       return
     else
-      TriggerClientEvent('esx:showNotification', src, 'Non hai abbastanza spazio per ritirare la cassa gratuita giornaliera', 'error')
+      ShowFrameworkNotification(src, 'Non hai abbastanza spazio per ritirare la cassa gratuita giornaliera', 'error')
       cb({status = false, lab = LabsData[labId]})
       return
     end
@@ -356,12 +541,12 @@ Labs.CreateLab = function ( xOwner )
 
   exports['KmF_Lib']:DiscordLog('lab', 'Laboratorio creato', 
   'LabID: ' .. labIdentifier .. 
-  '\nProprietario: ' .. GetPlayerName(xOwner.source) .. 
+  '\nProprietario: ' .. GetPlayerNameNative(xOwner.source) .. 
   '\nLicense: ' .. xOwner.identifier ..
   '\nData: ' .. os.date('%d/%m/%Y %H:%M:%S'))
   
   DebugPrint('Lab created with ID ' .. labIdentifier)
-  -- print(ESX.DumpTable(LabsData))
+  -- print(DumpTable(LabsData))
 end
 
 Labs.DeleteLab = function ( LabId )
@@ -402,8 +587,8 @@ Labs.RemoveDepositItem = function ( LabId, Item, Qty )
   end
 end
 
-ESX.RegisterServerCallback('KmF_Lab:Server:GetPlayerLab', function(source, cb)
-  local xPlayer = ESX.GetPlayerFromId(source)
+RegisterFrameworkCallback('KmF_Lab:Server:GetPlayerLab', function(source, cb)
+  local xPlayer = GetPlayer(source)
   if xPlayer then
     local identifier = xPlayer.identifier
     local labId = Labs.CheckEmployee({identifier = identifier}).lab
@@ -441,7 +626,7 @@ end
 Labs.SyncClientCrafting = function(LabID, CTableKey, CTable)
   DebugPrint('CRAFTING_SYNC - Received crafting sync request for lab ' .. LabID .. ' by ' .. CTable['syncOwner'])
   for k, v in pairs(LabsData[LabID]['Employees']) do
-    local xPlayer = ESX.GetPlayerFromIdentifier(k)
+    local xPlayer = GetPlayerByIdentifier(k)
     if xPlayer then
 
       DebugPrint('Syncing crafting for player ' .. xPlayer.name .. '[' .. xPlayer.identifier .. ']')
@@ -458,11 +643,11 @@ end
 RegisterServerEvent('KmF_Lab:Server:SyncCrafting')
 AddEventHandler('KmF_Lab:Server:SyncCrafting', function(LabId, CTableKey, CTable)
   local src = source
-  local xPlayer = ESX.GetPlayerFromId(src)
+  local xPlayer = GetPlayer(src)
   local identifier = xPlayer.identifier
 
   DebugPrint('CRAFTING_SYNC - Received crafting sync request from player ' .. identifier .. ' for Lab ' .. LabId)
-  -- print(ESX.DumpTable(CTable))
+  -- print(DumpTable(CTable))
 
   LabsData[LabId]['Crafting']['Tables'][CTableKey] = CTable
 
@@ -479,18 +664,18 @@ Labs.GetDepositItemQty = function ( LabId, ItemName )
   return 0
 end
 
-ESX.RegisterServerCallback('KmF_Lab:Server:RechargeAccount', function(source, cb, LabId, moneyToCharge)
-  local xPlayer = ESX.GetPlayerFromId(source)
-  local moneyQty = exports['qs-inventory']:GetItemTotalAmount(xPlayer.source, 'black_money')
+RegisterFrameworkCallback('KmF_Lab:Server:RechargeAccount', function(source, cb, LabId, moneyToCharge)
+  local xPlayer = GetPlayer(source)
+  local moneyQty = GetItemCount(xPlayer.source, 'black_money')
 
   if moneyQty >= tonumber(moneyToCharge) then
-    exports['qs-inventory']:RemoveItem(xPlayer.source, 'black_money', tonumber(moneyToCharge))
+    RemoveInventoryItem(xPlayer.source, 'black_money', tonumber(moneyToCharge))
     LabsData[LabId]['Accounts'].Balance = tonumber(LabsData[LabId]['Accounts'].Balance) + tonumber(moneyToCharge)
     Labs.UpdateLabEmployees(LabId)
 
     exports['KmF_Lib']:DiscordLog('lab', 'Ricarica conto laboratorio',
     'LabID: ' .. LabId ..
-    '\nGiocatore: ' .. GetPlayerName(xPlayer.source) ..
+    '\nGiocatore: ' .. GetPlayerNameNative(xPlayer.source) ..
     '\nLicense: ' .. xPlayer.identifier ..
     '\nQuantita: ' .. moneyToCharge)
 
@@ -549,7 +734,7 @@ Labs.BuyUpgrade = function ( LabId, Type, UpgradeId )
       LabsData[LabId]['Accounts'].Tax = LabsData[LabId]['Accounts'].Tax + Config.LabList[UpgradeId].tax
       LabsData[LabId]['BoughtLabs'][UpgradeId] = ""
 
-      -- print(ESX.DumpTable(LabsData[LabId]['Crafting']))
+      -- print(DumpTable(LabsData[LabId]['Crafting']))
 
       LabsData[LabId]['Crafting']['Recipes'][UpgradeId] = ""
 
@@ -559,7 +744,7 @@ Labs.BuyUpgrade = function ( LabId, Type, UpgradeId )
       '\nPrezzo: ' .. Config.LabList[UpgradeId].price .. ' $' ..
       '\nLaboratorio: ' .. UpgradeId)
 
-      -- print(ESX.DumpTable(LabsData[LabId]['Crafting']))
+      -- print(DumpTable(LabsData[LabId]['Crafting']))
       Labs.UpdateLabEmployees(LabId)
       return { status = true }
     else
@@ -678,15 +863,15 @@ Labs.GetDepositTotalItems = function ( LabId )
   return depositQty
 end
 
-ESX.RegisterServerCallback('KmF_Lab:Server:GetDepositCapability', function(source, cb, LabId)
+RegisterFrameworkCallback('KmF_Lab:Server:GetDepositCapability', function(source, cb, LabId)
   cb({ capability = Labs.GetDepositCapability(LabId) })
 end)
 
-ESX.RegisterServerCallback('KmF_Lab:Server:GetDepositTotalItems', function(source, cb, LabId)
+RegisterFrameworkCallback('KmF_Lab:Server:GetDepositTotalItems', function(source, cb, LabId)
   cb({ totalItems = Labs.GetDepositTotalItems(LabId) })
 end)
 
-ESX.RegisterServerCallback('KmF_Lab:Server:BuyUpgrade', function(source, cb, LabId, UpgradeType, UpgradeId)
+RegisterFrameworkCallback('KmF_Lab:Server:BuyUpgrade', function(source, cb, LabId, UpgradeType, UpgradeId)
   local res = Labs.BuyUpgrade(LabId, UpgradeType, UpgradeId)
 
   if res.status then
@@ -740,8 +925,8 @@ Labs.ResetCraft = function ( LabId, PosId, src )
             if src then
               exports['KmF_Lib']:DiscordLog('lab', 'CRAFTING - Fortuna di crafting',
               'LabID: ' .. LabId ..
-              '\nGiocatore: ' .. GetPlayerName(src) ..
-              '\nLicense: ' .. ESX.GetPlayerFromId(src).identifier ..
+              '\nGiocatore: ' .. GetPlayerNameNative(src) ..
+              '\nLicense: ' .. GetPlayer(src).identifier ..
               '\nFortuna: ' .. fortuneLevel .. ' [' .. fortuneChance .. '%]')
               TriggerClientEvent('KmF_Lab:Client:Notify', src, 'Che fortuna! Hai ottenuto 1 ' .. v.item.result.label .. ' extra!', 'success')
             end
@@ -749,11 +934,11 @@ Labs.ResetCraft = function ( LabId, PosId, src )
           
         end
 
-        local xPlayer = ESX.GetPlayerFromId(src)
+        local xPlayer = GetPlayer(src)
 
         exports['KmF_Lib']:DiscordLog('lab', 'Oggetto craftato ritirato',
         'LabID: ' .. LabId ..
-        '\nGiocatore: ' .. GetPlayerName(src) .. ' [' .. xPlayer.identifier .. ']' ..
+        '\nGiocatore: ' .. GetPlayerNameNative(src) .. ' [' .. xPlayer.identifier .. ']' ..
         '\nPostazione: ' .. PosId ..
         '\nOggetto: ' .. v.item.result.label ..
         '\nQuantita: ' .. v.item.result.count)
@@ -773,7 +958,7 @@ Labs.ResetCraft = function ( LabId, PosId, src )
   return { status = false, reason = 'Postazione non trovata'}
 end
 
-ESX.RegisterServerCallback('KmF_Lab:Server:ResetCraft', function(source, cb, LabId, PosId)
+RegisterFrameworkCallback('KmF_Lab:Server:ResetCraft', function(source, cb, LabId, PosId)
   
   local res = Labs.ResetCraft(LabId, PosId, source)
 
@@ -784,11 +969,11 @@ ESX.RegisterServerCallback('KmF_Lab:Server:ResetCraft', function(source, cb, Lab
   end
 end)
 
-ESX.RegisterServerCallback('KmF_Lab:Server:CraftItem', function(source, cb, LabId, TableKey, Item)
-  local xPlayer = ESX.GetPlayerFromId(source)
+RegisterFrameworkCallback('KmF_Lab:Server:CraftItem', function(source, cb, LabId, TableKey, Item)
+  local xPlayer = GetPlayer(source)
   local labDeposit = LabsData[LabId]['Deposit']
 
-  -- DebugPrint(ESX.DumpTable(Item))
+  -- DebugPrint(DumpTable(Item))
   -- print('TK: ' .. TableKey)
 
   -- Check if item.requirements are in labDeposit
@@ -810,7 +995,7 @@ ESX.RegisterServerCallback('KmF_Lab:Server:CraftItem', function(source, cb, LabI
 
     exports['KmF_Lib']:DiscordLog('lab', 'Crafting avviato',
     'LabID: ' .. LabId ..
-    '\nGiocatore: ' .. GetPlayerName(xPlayer.source) ..
+    '\nGiocatore: ' .. GetPlayerNameNative(xPlayer.source) ..
     '\nLicense: ' .. xPlayer.identifier ..
     '\nPostazione: ' .. TableKey ..
     '\nOggetto: ' .. Item.result.label ..
@@ -825,13 +1010,13 @@ ESX.RegisterServerCallback('KmF_Lab:Server:CraftItem', function(source, cb, LabI
   end
 end)
 
-local allitems = exports['qs-inventory']:GetItemList()
+local allitems = GetInventoryItemList()
 
-ESX.RegisterServerCallback('KmF_Lab:Server:DepositItem', function(source, cb, LabId, item_name, item_qty)
+RegisterFrameworkCallback('KmF_Lab:Server:DepositItem', function(source, cb, LabId, item_name, item_qty)
   local src = source
-  local inventory = exports['qs-inventory']:GetInventory(src)
+  local inventory = GetPlayerInventory(src)
 
-  local itemqty = exports['qs-inventory']:GetItemTotalAmount(src, item_name)
+  local itemqty = GetItemCount(src, item_name)
 
   if itemqty < tonumber(item_qty) then
     cb({status = false, reason = 'Non hai abbastanza oggetti'})
@@ -839,14 +1024,14 @@ ESX.RegisterServerCallback('KmF_Lab:Server:DepositItem', function(source, cb, La
   end
 
   if Labs.AddDepositItem(LabId, allitems[item_name], item_qty) then
-    exports['qs-inventory']:RemoveItem(src, item_name, item_qty)
+    RemoveInventoryItem(src, item_name, item_qty)
     cb({status = true})
 
-    local xPlayer = ESX.GetPlayerFromId(src)
+    local xPlayer = GetPlayer(src)
 
     exports['KmF_Lib']:DiscordLog('lab', 'Oggetto depositato nel deposito',
     'LabID: ' .. LabId ..
-    '\nGiocatore: ' .. GetPlayerName(src) .. ' [' .. xPlayer.identifier .. ']' ..
+    '\nGiocatore: ' .. GetPlayerNameNative(src) .. ' [' .. xPlayer.identifier .. ']' ..
     '\nOggetto: ' .. item_name ..
     '\nQuantita: ' .. item_qty)
 
@@ -859,24 +1044,24 @@ ESX.RegisterServerCallback('KmF_Lab:Server:DepositItem', function(source, cb, La
   return false
 end)
 
-ESX.RegisterServerCallback('KmF_Lab:Server:WithdrawItem', function(source, cb, LabId, item_name, item_qty)
+RegisterFrameworkCallback('KmF_Lab:Server:WithdrawItem', function(source, cb, LabId, item_name, item_qty)
   local src = source
-  local inventory = exports['qs-inventory']:GetInventory(src)
-  local xPlayer = ESX.GetPlayerFromId(src)
+  local inventory = GetPlayerInventory(src)
+  local xPlayer = GetPlayer(src)
 
-  if xPlayer.canCarryItem(item_name, item_qty) == false then
+  if CanCarryItem(src, item_name, item_qty) == false then
     cb({status = false, reason = 'Non hai abbastanza spazio'})
     return
   end
 
   if Labs.RemoveDepositItem(LabId, item_name, item_qty) then
-    exports['qs-inventory']:AddItem(src, item_name, item_qty)
+    AddInventoryItem(src, item_name, item_qty)
 
-    local xPlayer = ESX.GetPlayerFromId(src)
+    local xPlayer = GetPlayer(src)
 
     exports['KmF_Lib']:DiscordLog('lab', 'Oggetto prelevato dal deposito',
     'LabID: ' .. LabId ..
-    '\nGiocatore: ' .. GetPlayerName(src) .. ' [' .. xPlayer.identifier .. ']' ..
+    '\nGiocatore: ' .. GetPlayerNameNative(src) .. ' [' .. xPlayer.identifier .. ']' ..
     '\nOggetto: ' .. item_name ..
     '\nQuantita: ' .. item_qty)
 
@@ -921,7 +1106,7 @@ Labs.AddEmployee = function ( LabId, Employee )
 
   Labs.UpdateLabEmployees(LabId)
 
-  -- print(ESX.DumpTable(LabsData))
+  -- print(DumpTable(LabsData))
 
   DebugPrint('Employee added to lab ' .. LabId)
   return true
@@ -934,7 +1119,7 @@ Labs.FireEmployee = function ( LabId, Employee )
   end
 
   LabsData[LabId]['Employees'][Employee] = nil
-  local xEmployee = ESX.GetPlayerFromIdentifier(Employee)
+  local xEmployee = GetPlayerByIdentifier(Employee)
   if xEmployee then
     -- print('Player found')
     TriggerClientEvent('KmF_Lab:Client:Notify', xEmployee.source, 'Sei stato licenziato da un laboratorio', 'error')
@@ -964,7 +1149,7 @@ Labs.PromoteEmployee = function ( LabId, Employee )
   LabsData[LabId]['Employees'][Employee]['Grade'] = LabsData[LabId]['Employees'][Employee]['Grade'] + 1
   LabsData[LabId]['Employees'][Employee]['GradeLabel'] = 'Manager'
 
-  local xEmployee = ESX.GetPlayerFromIdentifier(Employee)
+  local xEmployee = GetPlayerByIdentifier(Employee)
   if xEmployee then
     TriggerClientEvent('KmF_Lab:Client:Notify', xEmployee.source, 'Sei stato promosso a Manager nel tuo laboratorio', 'success')
   end
@@ -992,7 +1177,7 @@ Labs.DegradeEmployee = function ( LabId, Employee )
   LabsData[LabId]['Employees'][Employee]['Grade'] = LabsData[LabId]['Employees'][Employee]['Grade'] - 1
   LabsData[LabId]['Employees'][Employee]['GradeLabel'] = 'Dipendente'
 
-  local xEmployee = ESX.GetPlayerFromIdentifier(Employee)
+  local xEmployee = GetPlayerByIdentifier(Employee)
   if xEmployee then
     TriggerClientEvent('KmF_Lab:Client:Notify', xEmployee.source, 'Sei stato degradato a Dipendente nel tuo laboratorio', 'error')
   end
@@ -1010,7 +1195,7 @@ end
 Labs.UpdateLabEmployees = function ( LabId )
   for k, v in pairs(LabsData[LabId]['Employees']) do
     -- print('Updating lab for player ' .. k)
-    local xPlayer = ESX.GetPlayerFromIdentifier(k)
+    local xPlayer = GetPlayerByIdentifier(k)
     -- print(xPlayer.source)
     if xPlayer then
       -- Citizen.Wait(1000)
@@ -1024,13 +1209,13 @@ end
 
 RegisterServerEvent('KmF_Lab:Server:CreateLab')
 AddEventHandler('KmF_Lab:Server:CreateLab', function()
-  local xOwner = ESX.GetPlayerFromId(source)
+  local xOwner = GetPlayer(source)
   Labs.CreateLab(xOwner)
 end)
 
 
-ESX.RegisterServerCallback('KmF_Lab:Server:Hire', function(source, cb, LabId, employeeId)
-  local xEmployee = ESX.GetPlayerFromId(employeeId)
+RegisterFrameworkCallback('KmF_Lab:Server:Hire', function(source, cb, LabId, employeeId)
+  local xEmployee = GetPlayer(employeeId)
 
   if xEmployee == nil then
     cb({status = false, reason = "Nessun giocatore con questo ID trovato"})
@@ -1045,7 +1230,7 @@ ESX.RegisterServerCallback('KmF_Lab:Server:Hire', function(source, cb, LabId, em
   end
 end)
 
-ESX.RegisterServerCallback('KmF_Lab:Server:FireEmployee', function(source, cb, LabId, employeeId)
+RegisterFrameworkCallback('KmF_Lab:Server:FireEmployee', function(source, cb, LabId, employeeId)
   if Labs.FireEmployee( LabId, employeeId ) then
     cb({status = true})
   else
@@ -1053,7 +1238,7 @@ ESX.RegisterServerCallback('KmF_Lab:Server:FireEmployee', function(source, cb, L
   end
 end)
 
-ESX.RegisterServerCallback('KmF_Lab:Server:PromoteEmployee', function(source, cb, LabId, employeeId)
+RegisterFrameworkCallback('KmF_Lab:Server:PromoteEmployee', function(source, cb, LabId, employeeId)
   if Labs.PromoteEmployee( LabId, employeeId ) then
     cb({status = true})
   else
@@ -1061,7 +1246,7 @@ ESX.RegisterServerCallback('KmF_Lab:Server:PromoteEmployee', function(source, cb
   end
 end)
 
-ESX.RegisterServerCallback('KmF_Lab:Server:DegradeEmployee', function(source, cb, LabId, employeeId)
+RegisterFrameworkCallback('KmF_Lab:Server:DegradeEmployee', function(source, cb, LabId, employeeId)
   if Labs.DegradeEmployee( LabId, employeeId ) then
     cb({status = true})
   else
@@ -1075,9 +1260,9 @@ function DebugPrint(text)
   end
 end
 
-ESX.RegisterServerCallback('KmF_Lab:Server:GetInventoryItems', function(source, cb)
-  local xPlayer = ESX.GetPlayerFromId(source)
-  local inventory = exports['qs-inventory']:GetInventory(xPlayer.source)
+RegisterFrameworkCallback('KmF_Lab:Server:GetInventoryItems', function(source, cb)
+  local xPlayer = GetPlayer(source)
+  local inventory = GetPlayerInventory(xPlayer.source)
 
   cb(inventory)
 end)
@@ -1123,20 +1308,20 @@ end)
 RegisterServerEvent('KmF_Lab:Server:GiveRandomBox')
 AddEventHandler('KmF_Lab:Server:GiveRandomBox', function(token)
   local src = source
-  local xPlayer = ESX.GetPlayerFromId(src)
+  local xPlayer = GetPlayer(src)
 
   local randN = math.random(1, 3)
   print(randN)
 
   local item = Config.FakeLabItems[randN]
 
-  if xPlayer.canCarryItem(item, 1) == false then
-    TriggerClientEvent('esx:showNotification', src, 'Non hai abbastanza spazio', 'error')
+  if CanCarryItem(src, item, 1) == false then
+    ShowFrameworkNotification(src, 'Non hai abbastanza spazio', 'error')
     return
   end
 
-  xPlayer.addInventoryItem(item, 1)
-  TriggerClientEvent('esx:showNotification', src, 'Hai raccolto un ' .. allitems[item].label, 'success')
+  AddInventoryItem(src, item, 1)
+  ShowFrameworkNotification(src, 'Hai raccolto un ' .. allitems[item].label, 'success')
 
 end)
 
@@ -1157,7 +1342,7 @@ Labs.GetLabSpyExtraInfo = function(labId, myLabId)
 
   if spyLevel >= 1 then
     DebugPrint('Spy level 1 - getting owner info')
-    -- local xOwner = ESX.GetPlayerFromIdentifier(LabsData[labId]['Owner'])
+    -- local xOwner = GetPlayerByIdentifier(LabsData[labId]['Owner'])
     local pInfo = MySQL.query.await('SELECT * FROM users WHERE identifier = @identifier', {
       ['@identifier'] = LabsData[labId]['Owner']
     })
@@ -1182,7 +1367,7 @@ Labs.GetLabSpyExtraInfo = function(labId, myLabId)
 
   if spyLevel >= 3 then
     DebugPrint('Spy level 3 - getting deposit info')
-    extraInfo['resources'].items = ESX.Table.SizeOf(LabsData[labId]['Deposit'])
+    extraInfo['resources'].items = TableSize(LabsData[labId]['Deposit'])
   else
     extraInfo['resources'].items = 'LIVELLO SPIA NON SUFFICIENTE'
   end
@@ -1209,7 +1394,7 @@ Labs.GetRandomSpiedLabs = function(labId)
 
   for i = 1, 2 do
     ::reroll::
-    local randN = math.random(1, ESX.Table.SizeOf(LabsData))
+    local randN = math.random(1, TableSize(LabsData))
     local n = 0
     for k, v in pairs(LabsData) do
       n = n + 1
@@ -1225,7 +1410,7 @@ Labs.GetRandomSpiedLabs = function(labId)
           extraInfo = Labs.GetLabSpyExtraInfo(k, labId)
           lab['LabInfo'].extraInfo = extraInfo or nil
 
-          print(ESX.DumpTable(lab['LabInfo'].extraInfo))
+          print(DumpTable(lab['LabInfo'].extraInfo))
 
           table.insert(spiedLabs, LabsData[k])
         else
@@ -1261,8 +1446,8 @@ Citizen.CreateThread(function()
   end
 end)
 
-ESX.RegisterServerCallback('KmF_Lab:Server:BuySpy', function(src, cb, labId)
-  local xPlayer = ESX.GetPlayerFromId(src)
+RegisterFrameworkCallback('KmF_Lab:Server:BuySpy', function(src, cb, labId)
+  local xPlayer = GetPlayer(src)
 
   local moneyQty = LabsData[labId]['Accounts'].Balance
 
@@ -1277,7 +1462,7 @@ ESX.RegisterServerCallback('KmF_Lab:Server:BuySpy', function(src, cb, labId)
     exports['KmF_Lib']:DiscordLog('lab', 'SHOP - Acquisto spia',
     'LabID: ' .. labId ..
     '\nPrezzo: ' .. SpyPrice .. ' $' ..
-    '\nGiocatore: ' .. GetPlayerName(xPlayer.source) ..
+    '\nGiocatore: ' .. GetPlayerNameNative(xPlayer.source) ..
     '\nLicense: ' .. xPlayer.identifier)
 
     Labs.UpdateLabEmployees(labId)
