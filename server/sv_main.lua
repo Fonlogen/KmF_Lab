@@ -84,7 +84,15 @@ end
 
 function GetInventoryItemList()
   if Config.Inventory == 'ox_inventory' then
-    return exports.ox_inventory:Items() or {}
+    local raw = exports.ox_inventory:Items() or {}
+    local normalized = {}
+    for k, v in pairs(raw) do
+      normalized[k] = v
+      if not normalized[k].name then
+        normalized[k].name = k
+      end
+    end
+    return normalized
   end
 
   if Config.Inventory == 'qb_inventory' then
@@ -144,8 +152,8 @@ function CanCarryItem(src, item, amount)
     return ok == true or ok == nil
   end
 
-  local player = GetPlayer(src)
-  return player and player.canCarryItem and player.canCarryItem(item, amount) or false
+  local ok = exports['qs-inventory']:CanCarryItem(src, item, amount)
+  return ok == true or ok == nil
 end
 
 function GetPlayerInventory(src)
@@ -154,12 +162,16 @@ function GetPlayerInventory(src)
     local formatted = {}
     for _, item in pairs(items) do
       if item and item.name then
-        formatted[item.name] = {
-          name = item.name,
-          label = item.label or item.name,
-          qty = item.count or item.amount or 0,
-          image = item.name,
-        }
+        if formatted[item.name] then
+          formatted[item.name].qty = formatted[item.name].qty + (item.count or item.amount or 0)
+        else
+          formatted[item.name] = {
+            name = item.name,
+            label = item.label or item.name,
+            qty = item.count or item.amount or 0,
+            image = item.name,
+          }
+        end
       end
     end
     return formatted
@@ -171,12 +183,16 @@ function GetPlayerInventory(src)
     local formatted = {}
     for _, item in pairs(items) do
       if item and item.name then
-        formatted[item.name] = {
-          name = item.name,
-          label = item.label or item.name,
-          qty = item.amount or 0,
-          image = item.image or item.name,
-        }
+        if formatted[item.name] then
+          formatted[item.name].qty = formatted[item.name].qty + (item.amount or 0)
+        else
+          formatted[item.name] = {
+            name = item.name,
+            label = item.label or item.name,
+            qty = item.amount or 0,
+            image = item.image or item.name,
+          }
+        end
       end
     end
     return formatted
@@ -1277,7 +1293,7 @@ Citizen.CreateThread(function()
       exports['KmF_Lib']:DiscordLog('lab', 'SALVATAGGIO LABORATORI',
       'Laboratori salvati sul database' ..
       '\nOrario: ' .. os.date('%d/%m/%Y %H:%M:%S') ..
-      '\nNumero laboratori: ' .. #LabsData)
+      '\nNumero laboratori: ' .. TableSize(LabsData))
 
       Labs.SaveLabs()
     end
@@ -1342,16 +1358,26 @@ Labs.GetLabSpyExtraInfo = function(labId, myLabId)
 
   if spyLevel >= 1 then
     DebugPrint('Spy level 1 - getting owner info')
-    -- local xOwner = GetPlayerByIdentifier(LabsData[labId]['Owner'])
-    local pInfo = MySQL.query.await('SELECT * FROM users WHERE identifier = @identifier', {
-      ['@identifier'] = LabsData[labId]['Owner']
-    })
+    if Config.Framework == 'qbcore' then
+      -- QBCore typically uses a different DB schema; fall back to identifier
+      if LabsData[labId] and LabsData[labId]['Owner'] then
+        extraInfo.owner = tostring(LabsData[labId]['Owner'])
+      else
+        extraInfo.owner = 'PROPRIETARIO SCONOSCIUTO'
+      end
+    else
+      local pInfo = MySQL.query.await('SELECT firstname, lastname FROM users WHERE identifier = @identifier', {
+        ['@identifier'] = LabsData[labId]['Owner']
+      })
 
-    while not pInfo do
-      Citizen.Wait(100)
+      if pInfo and pInfo[1] and pInfo[1].firstname and pInfo[1].lastname then
+        extraInfo.owner = pInfo[1].firstname .. ' ' .. pInfo[1].lastname
+      elseif LabsData[labId] and LabsData[labId]['Owner'] then
+        extraInfo.owner = tostring(LabsData[labId]['Owner'])
+      else
+        extraInfo.owner = 'PROPRIETARIO SCONOSCIUTO'
+      end
     end
-
-    extraInfo.owner = pInfo[1].firstname .. ' ' .. pInfo[1].lastname
   else
     extraInfo.owner = 'LIVELLO SPIA NON SUFFICIENTE'
   end
@@ -1401,13 +1427,13 @@ Labs.GetRandomSpiedLabs = function(labId)
       if n == randN then
         if k ~= labId then
 
-          if i > 1 and spiedLabs[1]['LabInfo'].LabID == k then
+          if i > 1 and spiedLabs[1].LabID == k then
             DebugPrint('Got a lab with same LabID, rerolling')
             goto reroll
           end
 
-          lab = LabsData[k]
-          extraInfo = Labs.GetLabSpyExtraInfo(k, labId)
+          local lab = LabsData[k]
+          local extraInfo = Labs.GetLabSpyExtraInfo(k, labId)
           lab['LabInfo'].extraInfo = extraInfo or nil
 
           print(DumpTable(lab['LabInfo'].extraInfo))
