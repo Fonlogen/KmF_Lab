@@ -1,6 +1,51 @@
 local society = nil
 
-ESX = exports['es_extended']:getSharedObject()
+local Framework = nil
+
+CreateThread(function()
+    if Config.Framework == 'qbcore' then
+        Framework = exports['qb-core']:GetCoreObject()
+    else
+        Framework = exports['es_extended']:getSharedObject()
+    end
+end)
+
+local function EnsureFramework()
+    while not Framework do
+        Wait(100)
+    end
+end
+
+local function TriggerFrameworkCallback(name, cb, ...)
+    EnsureFramework()
+    if Config.Framework == 'qbcore' then
+        Framework.Functions.TriggerCallback(name, cb, ...)
+        return
+    end
+
+    Framework.TriggerServerCallback(name, cb, ...)
+end
+
+local function ShowNotification(msg, msgType)
+    EnsureFramework()
+    if Config.Framework == 'qbcore' then
+        Framework.Functions.Notify(msg, msgType or 'primary')
+        return
+    end
+
+    Framework.ShowNotification(msg, msgType)
+end
+
+local function IsPlayerLoaded()
+    EnsureFramework()
+    if Config.Framework == 'qbcore' then
+        return LocalPlayer and LocalPlayer.state and LocalPlayer.state.isLoggedIn or false
+    end
+
+    return Framework and Framework.IsPlayerLoaded and Framework.IsPlayerLoaded() or false
+end
+
+local playerLoadedEvent = Config.Framework == 'qbcore' and 'QBCore:Client:OnPlayerLoaded' or 'esx:playerLoaded'
 
 myLab = nil
 myIdentifier = nil
@@ -9,11 +54,11 @@ isInNui = false
 
 local pLoaded = false
 
-RegisterNetEvent('esx:playerLoaded')
-AddEventHandler('esx:playerLoaded', function()
+RegisterNetEvent(playerLoadedEvent)
+AddEventHandler(playerLoadedEvent, function()
     pLoaded = true
     Citizen.Wait(2500)
-    ESX.TriggerServerCallback('KmF_Lab:Server:GetPlayerLab', function(lab)
+    TriggerFrameworkCallback('KmF_Lab:Server:GetPlayerLab', function(lab)
         if lab.lab ~= nil then
             myLab = lab.lab
         end
@@ -30,14 +75,14 @@ end)
 -- end)
 
 RegisterNuiCallback('freeChest', function(data, cb)
-  ESX.TriggerServerCallback('KmF_Lab:Server:GetDailyChest', function(cb)
+  TriggerFrameworkCallback('KmF_Lab:Server:GetDailyChest', function(cb)
     -- print('Callback received')
   end, myLab['LabID'])
 end)
 
 AddEventHandler('onResourceStart', function(resourceName)
     if resourceName == GetCurrentResourceName() then
-        if ESX.IsPlayerLoaded() then
+        if IsPlayerLoaded() then
             -- print('Player is loaded')
             pLoaded = true
         end
@@ -49,7 +94,7 @@ AddEventHandler('onResourceStart', function(resourceName)
         Citizen.Wait(1500)
         -- print('Loading lab')
 
-        ESX.TriggerServerCallback('KmF_Lab:Server:GetPlayerLab', function(lab)
+        TriggerFrameworkCallback('KmF_Lab:Server:GetPlayerLab', function(lab)
             if lab.lab ~= nil then
                 myLab = lab.lab
             end
@@ -168,7 +213,7 @@ RegisterNUICallback('craft', function(data)
     end
 
     if tableKey == nil then
-        ESX.ShowNotification('Non ci sono tavoli liberi', 'error')
+        ShowNotification('Non ci sono tavoli liberi', 'error')
         return
     end
 
@@ -184,11 +229,11 @@ RegisterNUICallback('buyLab', function(data)
     SetNuiFocus(false, false)
     TriggerScreenblurFadeOut(1000)
     if data.buy then
-        ESX.TriggerServerCallback('KmF_Lab:Server:BuyLab', function(cb)
+        TriggerFrameworkCallback('KmF_Lab:Server:BuyLab', function(cb)
             if cb.status then
-                ESX.ShowNotification('Laboratorio acquistato con successo', 'success')
+                ShowNotification('Laboratorio acquistato con successo', 'success')
             else
-                ESX.ShowNotification(cb.reason, 'error')
+                ShowNotification(cb.reason, 'error')
             end
         end)
     end
@@ -196,7 +241,7 @@ end)
 
 function toggleLabNui()
     if myIdentifier == nil then
-        ESX.TriggerServerCallback('KmF_Lab:Server:GetPlayerIdentifier', function( identifier )
+        TriggerFrameworkCallback('KmF_Lab:Server:GetPlayerIdentifier', function( identifier )
             myIdentifier = identifier
         end)
     end
@@ -237,26 +282,26 @@ end
 
 RegisterNUICallback('rechargeAccount', function(data)
     -- print('Callback received ' .. data.money)
-    ESX.TriggerServerCallback('KmF_Lab:Server:RechargeAccount', function(cb)
+    TriggerFrameworkCallback('KmF_Lab:Server:RechargeAccount', function(cb)
         if cb.status then
-            ESX.ShowNotification('Conto ricaricato con successo', 'success')
+            ShowNotification('Conto ricaricato con successo', 'success')
         else
-            ESX.ShowNotification(cb.reason, 'error')
+            ShowNotification(cb.reason, 'error')
         end
     end, myLab['LabID'], data.money)
 end)
 
 RegisterNUICallback('buyLabUpgrade', function(data)
     -- print('Buying upgrade ' .. data.type .. ' ' .. data.id)
-    ESX.TriggerServerCallback('KmF_Lab:Server:BuyUpgrade', function(cb)
+    TriggerFrameworkCallback('KmF_Lab:Server:BuyUpgrade', function(cb)
         if cb.status then
             if data.type == 'lab' then
-                ESX.ShowNotification('Laboratorio acquistato con successo', 'success')
+                ShowNotification('Laboratorio acquistato con successo', 'success')
             else
-                ESX.ShowNotification('Upgrade acquistato con successo', 'success')
+                ShowNotification('Upgrade acquistato con successo', 'success')
             end
         else
-            ESX.ShowNotification(cb.reason, 'error')
+            ShowNotification(cb.reason, 'error')
         end
     end, myLab['LabID'], data.type, data.id)
 end)
@@ -272,21 +317,21 @@ RegisterNUICallback('closeMenu', function(data, cb)
 end)
 
 RegisterNUICallback('resetCraft', function(data)
-    ESX.TriggerServerCallback('KmF_Lab:Server:ResetCraft', function(cb)
+    TriggerFrameworkCallback('KmF_Lab:Server:ResetCraft', function(cb)
         if cb.status then
-            ESX.ShowNotification('Oggetto ritirato ed inviato al deposito', 'success')
+            ShowNotification('Oggetto ritirato ed inviato al deposito', 'success')
         else
-            ESX.ShowNotification(cb.reason, 'error')
+            ShowNotification(cb.reason, 'error')
         end
     end, myLab['LabID'], tonumber(data.id))
 end)
 
 RegisterNUICallback('withdrawDepositItem', function(data)
-    ESX.TriggerServerCallback('KmF_Lab:Server:WithdrawItem', function(cb)
+    TriggerFrameworkCallback('KmF_Lab:Server:WithdrawItem', function(cb)
         if cb.status then
-            ESX.ShowNotification('Oggetto ritirato con successo', 'success')
+            ShowNotification('Oggetto ritirato con successo', 'success')
         else
-            ESX.ShowNotification(cb.reason, 'error')
+            ShowNotification(cb.reason, 'error')
         end
     end, myLab['LabID'], data.item, data.qty)
 end)
@@ -295,17 +340,17 @@ RegisterNUICallback('AddItemToDeposit', function(data)
     local item = data.item
     local amount = data.qty
 
-    ESX.TriggerServerCallback('KmF_Lab:Server:GetDepositCapability', function(capability)
+    TriggerFrameworkCallback('KmF_Lab:Server:GetDepositCapability', function(capability)
         if tonumber(capability.capability) >= tonumber(amount) then
-            ESX.TriggerServerCallback('KmF_Lab:Server:DepositItem', function(cb)
+            TriggerFrameworkCallback('KmF_Lab:Server:DepositItem', function(cb)
                 if cb.status then
-                    ESX.ShowNotification('Oggetto aggiunto al deposito con successo', 'success')
+                    ShowNotification('Oggetto aggiunto al deposito con successo', 'success')
                 else
-                    ESX.ShowNotification(cb.reason, 'error')
+                    ShowNotification(cb.reason, 'error')
                 end
             end, myLab['LabID'], item, amount)
         else
-            ESX.ShowNotification('Non c\'è abbastanza spazio nel deposito', 'error')
+            ShowNotification('Non c\'è abbastanza spazio nel deposito', 'error')
         end
     end, myLab['LabID'])
 end)
@@ -325,20 +370,20 @@ RegisterNUICallback('startCraft', function(data)
     end
 
     if tableKey == nil then
-        ESX.ShowNotification('Non ci sono tavoli liberi', 'error')
+        ShowNotification('Non ci sono tavoli liberi', 'error')
         return
     end
 
-    ESX.TriggerServerCallback('KmF_Lab:Server:CraftItem', function(cb)
+    TriggerFrameworkCallback('KmF_Lab:Server:CraftItem', function(cb)
 
         if cb.status then
             myLab['Crafting']['Tables'][tableKey]['item'] = item
             myLab['Crafting']['Tables'][tableKey]['syncOwner'] = myIdentifier
 
             TriggerServerEvent('KmF_Lab:Server:SyncCrafting', myLab['LabID'], tableKey, myLab['Crafting']['Tables'][tableKey])
-            ESX.ShowNotification('Lavorazione avviata con successo', 'success')
+            ShowNotification('Lavorazione avviata con successo', 'success')
         else
-            ESX.ShowNotification(cb.reason, 'error')
+            ShowNotification(cb.reason, 'error')
         end
     end, myLab['LabID'], tableKey, item)
 end)
@@ -358,7 +403,7 @@ AddEventHandler('KmF_Lab:Client:SetLab', function(lab)
 end)
 
 RegisterNUICallback('GetInventoryItems', function()
-    ESX.TriggerServerCallback('KmF_Lab:Server:GetInventoryItems', function(items)
+    TriggerFrameworkCallback('KmF_Lab:Server:GetInventoryItems', function(items)
         SendNUIMessage({
             action = 'SetInventoryItems',
             data = items,
@@ -368,7 +413,7 @@ end)
 
 RegisterNetEvent('KmF_Lab:Client:Notify')
 AddEventHandler('KmF_Lab:Client:Notify', function(msg, type)
-    ESX.ShowNotification(msg, type)
+    ShowNotification(msg, type)
 end)
 
 RegisterCommand('registerlab', function(source, args, rawCommand)
@@ -376,11 +421,11 @@ RegisterCommand('registerlab', function(source, args, rawCommand)
 end, true)
 
 RegisterNUICallback("hireEmployee", function( data )
-    ESX.TriggerServerCallback('KmF_Lab:Server:Hire', function( cb )
+    TriggerFrameworkCallback('KmF_Lab:Server:Hire', function( cb )
         if cb.status then
-            ESX.ShowNotification('Dipendente assunto con successo', 'success')
+            ShowNotification('Dipendente assunto con successo', 'success')
         else
-            ESX.ShowNotification(cb.reason, 'error')
+            ShowNotification(cb.reason, 'error')
         end
     end, myLab.LabID, data.employeeId )
 
@@ -389,11 +434,11 @@ end)
 RegisterNUICallback("fireEmployee", function(data)
     local employeeId = data.employee
 
-    ESX.TriggerServerCallback('KmF_Lab:Server:FireEmployee', function(cb)
+    TriggerFrameworkCallback('KmF_Lab:Server:FireEmployee', function(cb)
         if cb.status then
-            ESX.ShowNotification('Dipendente licenziato con successo', 'success')
+            ShowNotification('Dipendente licenziato con successo', 'success')
         else
-            ESX.ShowNotification(cb.reason, 'error')
+            ShowNotification(cb.reason, 'error')
         end
     end, myLab['LabID'], employeeId)
 end)
@@ -402,11 +447,11 @@ RegisterNUICallback("promoteEmployee", function(data)
     local employee = data.employee
     -- print(employee)
 
-    ESX.TriggerServerCallback('KmF_Lab:Server:PromoteEmployee', function(cb)
+    TriggerFrameworkCallback('KmF_Lab:Server:PromoteEmployee', function(cb)
         if cb.status then
-            ESX.ShowNotification('Dipendente promosso con successo', 'success')
+            ShowNotification('Dipendente promosso con successo', 'success')
         else
-            ESX.ShowNotification(cb.reason, 'error')
+            ShowNotification(cb.reason, 'error')
         end
     end, myLab['LabID'], employee)
 end)
@@ -414,11 +459,11 @@ end)
 RegisterNUICallback("degradeEmployee", function(data)
     local employee = data.employee
 
-    ESX.TriggerServerCallback('KmF_Lab:Server:DegradeEmployee', function(cb)
+    TriggerFrameworkCallback('KmF_Lab:Server:DegradeEmployee', function(cb)
         if cb.status then
-            ESX.ShowNotification('Dipendente declassato con successo', 'success')
+            ShowNotification('Dipendente declassato con successo', 'success')
         else
-            ESX.ShowNotification(cb.reason, 'error')
+            ShowNotification(cb.reason, 'error')
         end
     end, myLab['LabID'], employee)
 end)
@@ -449,7 +494,7 @@ if Config.Debug then
         local labId = args[1] or nil
 
         if labId == nil then
-            ESX.ShowNotification('Devi specificare un Lab ID', 'error')
+            ShowNotification('Devi specificare un Lab ID', 'error')
             return
         end
 
@@ -641,11 +686,11 @@ for k, v in pairs(Config.FakeLabPositions) do
 end
 
 RegisterNUICallback('attack/buySpy', function()
-    ESX.TriggerServerCallback('KmF_Lab:Server:BuySpy', function(cb)
+    TriggerFrameworkCallback('KmF_Lab:Server:BuySpy', function(cb)
         if cb.status then
-            ESX.ShowNotification('Spia acquistata con successo', 'success')
+            ShowNotification('Spia acquistata con successo', 'success')
         else
-            ESX.ShowNotification(cb.reason, 'error')
+            ShowNotification(cb.reason, 'error')
         end
     end, myLab['LabID'])
 end)

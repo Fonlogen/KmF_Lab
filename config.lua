@@ -2,6 +2,9 @@ Config = {}
 
 Config.Debug = false
 
+Config.Framework = Config.Framework or 'esx' -- 'esx' | 'qbcore'
+Config.Inventory = Config.Inventory or 'qs_inventory' -- 'qs_inventory' | 'ox_inventory' | 'qb_inventory'
+
 Config.DatabaseSaveTime = 12 * 60000 -- Minutes
 
 Config.LabPrice = 100000;
